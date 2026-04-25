@@ -210,17 +210,30 @@ def render_result(result: dict) -> None:
 
 def render_chart(scores: dict) -> None:
     """Bar-Chart mit Positive- und Negative-Scores."""
-    labels = list(scores.keys())
-    values = list(scores.values())
-    colors = [LABEL_COLORS[label] for label in labels]
+    # Reihenfolge fixieren, damit Positive immer links steht
+    order = ["Positive", "Negative"]
+    labels = [l for l in order if l in scores]
+    values = [scores[l] for l in labels]
+    colors = [LABEL_COLORS[l] for l in labels]
 
-    fig, ax = plt.subplots(figsize=(6, 3.2))
-    bars = ax.bar(labels, values, color=colors, edgecolor="black", linewidth=0.6)
-    ax.set_ylim(0, 1)
-    ax.set_ylabel("Score")
-    ax.set_title("Sentiment Scores")
+    fig, ax = plt.subplots(figsize=(6, 3.5))
+    bars = ax.bar(labels, values, color=colors, width=0.55)
 
-    # Score-Werte über jeden Balken schreiben
+    # Achsen
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("Wahrscheinlichkeit")
+    ax.set_xlabel("Klasse")
+    ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
+
+    # Unnötige Elemente entfernen
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    ax.tick_params(axis="both", length=0)
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+    ax.set_axisbelow(True)
+
+    # Werte über den Balken
     for bar, value in zip(bars, values):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
@@ -231,7 +244,7 @@ def render_chart(scores: dict) -> None:
             fontweight="bold",
         )
 
-    plt.tight_layout()
+    fig.tight_layout()
     st.pyplot(fig)
 
 
