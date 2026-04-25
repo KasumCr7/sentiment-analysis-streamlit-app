@@ -220,6 +220,14 @@ def main() -> None:
         placeholder="Tippe hier einen englischen Satz ein ...",
     )
 
+    target_sentiment = st.selectbox(
+        "Target Sentiment",
+        ["Positive", "Negative"],
+        key="target_sentiment",
+        help="In welche Richtung soll der Text später verändert werden?",
+    )
+    st.caption(f"Ausgewähltes Ziel-Sentiment: **{target_sentiment}**")
+
     analyze_clicked = st.button(
         "Analyze Sentiment", type="primary", use_container_width=True
     )
