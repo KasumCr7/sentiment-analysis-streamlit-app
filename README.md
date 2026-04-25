@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🧠 Sentiment Analysis Web App
 
 Eine interaktive Web-App zur Sentiment-Analyse von Texten — gebaut mit **Streamlit**, **HuggingFace Transformers** und vollständig in **Docker** containerisiert. Kommt mit einem Jupyter-Notebook für die explorative Datenanalyse.
@@ -119,3 +120,7 @@ docker compose down -v
 ## 📝 Lizenz
 
 MIT — frei zu nutzen, anzupassen und weiterzuentwickeln.
+=======
+# sentiment-analysis-streamlit-app
+Simple Sentiment Analysis web App using Streamlit, Transformers, and Docker.
+>>>>>>> a823594900a67302045ae1f26cfd7f90f55a0f9b
