@@ -1,75 +1,162 @@
+"""
+Sentiment Analysis Web App
+--------------------------
+Streamlit-Frontend für ein HuggingFace Sentiment-Modell (DistilBERT SST-2).
+
+Run:
+    streamlit run app.py
+"""
+
 import streamlit as st
-import pandas as pd
 import matplotlib.pyplot as plt
 from transformers import pipeline
-from pathlib import Path
 
-st.set_page_config(page_title="Sentiment Analysis", page_icon="🧠", layout="wide")
+# ─────────────────────────────────────────────────────────────
+# Konstanten
+# ─────────────────────────────────────────────────────────────
+MODEL_NAME = "distilbert-base-uncased-finetuned-sst-2-english"
+EXAMPLE_TEXT = "I love this product! It works flawlessly and made my day."
 
-DATA_PATH = Path("data/sentiment_data.csv")
+LABEL_MAP = {
+    "POSITIVE": "Positive",
+    "NEGATIVE": "Negative",
+}
+
+LABEL_COLORS = {
+    "Positive": "#4CAF50",
+    "Negative": "#F44336",
+}
 
 
-@st.cache_resource(show_spinner="Lade Sentiment-Modell...")
-def load_pipeline():
-    return pipeline(
-        "sentiment-analysis",
-        model="distilbert-base-uncased-finetuned-sst-2-english",
+# ─────────────────────────────────────────────────────────────
+# Modell laden (gecached über die ganze Session)
+# ─────────────────────────────────────────────────────────────
+@st.cache_resource(show_spinner="Lade Sentiment-Modell ...")
+def load_model():
+    """Lädt die HuggingFace Sentiment-Pipeline einmalig."""
+    return pipeline("sentiment-analysis", model=MODEL_NAME)
+
+
+# ─────────────────────────────────────────────────────────────
+# Analyse-Logik
+# ─────────────────────────────────────────────────────────────
+def analyze_text(classifier, text: str) -> dict:
+    """
+    Führt die Sentiment-Analyse aus und liefert ein Dict mit
+    label, confidence sowie Scores für beide Klassen.
+    """
+    result = classifier(text)[0]
+    raw_label = result["label"]
+    confidence = float(result["score"])
+    label = LABEL_MAP.get(raw_label, raw_label)
+
+    # Score auf beide Klassen aufteilen (Pipeline liefert nur den Top-Score)
+    if label == "Positive":
+        scores = {"Positive": confidence, "Negative": 1 - confidence}
+    else:
+        scores = {"Negative": confidence, "Positive": 1 - confidence}
+
+    return {"label": label, "confidence": confidence, "scores": scores}
+
+
+# ─────────────────────────────────────────────────────────────
+# UI-Komponenten
+# ─────────────────────────────────────────────────────────────
+def render_result(result: dict) -> None:
+    """Zeigt Label, Confidence-Metrik und Bar-Chart."""
+    label = result["label"]
+    confidence = result["confidence"]
+    emoji = "😊" if label == "Positive" else "😞"
+
+    col1, col2 = st.columns(2)
+    col1.metric("Sentiment", f"{emoji} {label}")
+    col2.metric("Confidence", f"{confidence:.2%}")
+
+    st.progress(confidence)
+    render_chart(result["scores"])
+
+
+def render_chart(scores: dict) -> None:
+    """Bar-Chart mit Positive- und Negative-Scores."""
+    labels = list(scores.keys())
+    values = list(scores.values())
+    colors = [LABEL_COLORS[label] for label in labels]
+
+    fig, ax = plt.subplots(figsize=(6, 3.2))
+    bars = ax.bar(labels, values, color=colors, edgecolor="black", linewidth=0.6)
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Score")
+    ax.set_title("Sentiment Scores")
+
+    # Score-Werte über jeden Balken schreiben
+    for bar, value in zip(bars, values):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.02,
+            f"{value:.1%}",
+            ha="center",
+            va="bottom",
+            fontweight="bold",
+        )
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
+
+# ─────────────────────────────────────────────────────────────
+# Main
+# ─────────────────────────────────────────────────────────────
+def main() -> None:
+    st.set_page_config(
+        page_title="Sentiment Analysis Web App",
+        page_icon="🧠",
+        layout="centered",
     )
 
-
-@st.cache_data
-def load_data():
-    if DATA_PATH.exists():
-        return pd.read_csv(DATA_PATH)
-    return pd.DataFrame(columns=["text", "label"])
-
-
-def main():
     st.title("🧠 Sentiment Analysis Web App")
-    st.caption("Analysiere Texte mit HuggingFace Transformers — gebaut mit Streamlit & Docker.")
+    st.caption(
+        "Analysiere Texte mit einem vortrainierten HuggingFace Modell "
+        "(DistilBERT, fine-tuned auf SST-2)."
+    )
 
-    classifier = load_pipeline()
+    # Modell laden — bei Fehler frühzeitig abbrechen
+    try:
+        classifier = load_model()
+    except Exception as exc:  # noqa: BLE001
+        st.error("Model could not be loaded")
+        st.exception(exc)
+        st.stop()
 
-    tab1, tab2 = st.tabs(["✍️ Live-Analyse", "📊 Dataset"])
+    # Session-State für das Textfeld initialisieren
+    if "user_text" not in st.session_state:
+        st.session_state.user_text = ""
 
-    with tab1:
-        text = st.text_area(
-            "Gib einen Text ein:",
-            placeholder="z.B. I absolutely love this product!",
-            height=140,
-        )
-        if st.button("Analysieren", type="primary"):
-            if not text.strip():
-                st.warning("Bitte einen Text eingeben.")
-            else:
-                result = classifier(text)[0]
-                label = result["label"]
-                score = result["score"]
-                emoji = "😊" if label == "POSITIVE" else "😞"
-                col1, col2 = st.columns(2)
-                col1.metric("Sentiment", f"{emoji} {label}")
-                col2.metric("Confidence", f"{score:.2%}")
-                st.progress(float(score))
+    # Beispiel-Button MUSS vor dem Textarea kommen,
+    # damit ein Klick den State aktualisiert bevor das Widget rendert.
+    if st.button("📋 Load Example Text"):
+        st.session_state.user_text = EXAMPLE_TEXT
 
-    with tab2:
-        df = load_data()
-        if df.empty:
-            st.info("Keine Dummy-Daten gefunden. Notebook ausführen oder CSV hinzufügen.")
+    text = st.text_area(
+        "Dein Text:",
+        key="user_text",
+        height=140,
+        placeholder="Tippe hier einen englischen Satz ein ...",
+    )
+
+    if st.button("🔍 Analyze Sentiment", type="primary"):
+        if not text.strip():
+            st.warning("Bitte zuerst einen Text eingeben.")
             return
 
-        st.subheader("Dataset Vorschau")
-        st.dataframe(df.head(20), use_container_width=True)
+        with st.spinner("Analysiere ..."):
+            try:
+                result = analyze_text(classifier, text)
+            except Exception as exc:  # noqa: BLE001
+                st.error("Fehler bei der Analyse.")
+                st.exception(exc)
+                return
 
-        st.subheader("Sentiment-Verteilung")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        df["label"].value_counts().plot(
-            kind="bar", ax=ax, color=["#4CAF50", "#F44336", "#FFC107"]
-        )
-        ax.set_xlabel("Label")
-        ax.set_ylabel("Anzahl")
-        ax.set_title("Sentiment Distribution")
-        plt.xticks(rotation=0)
-        st.pyplot(fig)
+        render_result(result)
 
 
 if __name__ == "__main__":
