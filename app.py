@@ -269,8 +269,12 @@ def main() -> None:
     try:
         classifier = load_model()
     except Exception as exc:  # noqa: BLE001
-        st.error("Model could not be loaded")
-        st.exception(exc)
+        st.error(
+            "Das Sentiment-Modell konnte nicht geladen werden. "
+            "Bitte Internet-Verbindung prüfen und die App neu starten."
+        )
+        with st.expander("Technische Details"):
+            st.exception(exc)
         st.stop()
 
     # ── Input Bereich ────────────────────────────────────────
@@ -300,8 +304,15 @@ def main() -> None:
     )
     st.caption(f"Ausgewähltes Ziel-Sentiment: **{target_sentiment}**")
 
+    has_text = bool(text.strip())
+    if not has_text:
+        st.caption(":grey[Bitte zuerst einen Text eingeben, um die Analyse zu aktivieren.]")
+
     analyze_clicked = st.button(
-        "Analyze Sentiment", type="primary", use_container_width=True
+        "Analyze Sentiment",
+        type="primary",
+        use_container_width=True,
+        disabled=not has_text,
     )
 
     st.divider()
@@ -313,18 +324,27 @@ def main() -> None:
         st.info("Gib einen Text ein und klicke auf 'Analyze Sentiment'.")
         return
 
-    if not text.strip():
+    # Defensive zweite Prüfung — Button sollte disabled sein, aber sicher ist sicher.
+    if not has_text:
         st.warning("Bitte zuerst einen Text eingeben.")
         return
 
-    with st.spinner("Analysiere ..."):
+    with st.spinner("Analysiere Text — das kann einige Sekunden dauern ..."):
         try:
             result = analyze_text(classifier, text)
         except Exception as exc:  # noqa: BLE001
-            st.error("Fehler bei der Analyse.")
-            st.exception(exc)
+            st.error(
+                "Bei der Analyse ist ein Fehler aufgetreten. "
+                "Bitte versuche es mit einem anderen Text erneut."
+            )
+            with st.expander("Technische Details"):
+                st.exception(exc)
             return
 
+    st.success(
+        f"Analyse abgeschlossen — Sentiment erkannt als **{result['label']}** "
+        f"(Confidence {result['confidence']:.0%})."
+    )
     render_result(result)
 
     # ── Explanation Bereich ──────────────────────────────────
