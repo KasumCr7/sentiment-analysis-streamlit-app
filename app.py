@@ -41,6 +41,30 @@ NEGATIVE_WORDS = {
     "defective", "cheap", "ugly", "slow", "problem", "issue",
 }
 
+# Wort-Mappings für die Transformation (sehr einfache Heuristik)
+TO_POSITIVE = {
+    "bad": "great", "terrible": "wonderful", "awful": "amazing",
+    "worst": "best", "horrible": "delightful", "poor": "excellent",
+    "disappointing": "impressive", "disappointed": "pleased",
+    "broken": "flawless", "useless": "useful", "boring": "exciting",
+    "annoying": "pleasant", "sad": "happy", "angry": "calm",
+    "waste": "treasure", "garbage": "gem", "defective": "perfect",
+    "cheap": "high-quality", "ugly": "beautiful", "slow": "fast",
+    "problem": "feature", "issue": "highlight", "hate": "love",
+    "not": "really", "never": "always", "no": "yes",
+}
+TO_NEGATIVE = {
+    "love": "hate", "great": "terrible", "amazing": "awful",
+    "awesome": "horrible", "excellent": "poor", "fantastic": "disappointing",
+    "wonderful": "boring", "best": "worst", "good": "bad",
+    "happy": "sad", "perfect": "broken", "brilliant": "dull",
+    "enjoy": "endure", "enjoyed": "endured", "nice": "annoying",
+    "beautiful": "ugly", "favorite": "least favorite",
+    "recommend": "warn against", "outstanding": "mediocre",
+    "superb": "awful", "delightful": "tedious", "pleased": "frustrated",
+    "impressive": "underwhelming", "always": "never", "really": "barely",
+}
+
 
 # ─────────────────────────────────────────────────────────────
 # Modell laden (gecached über die ganze Session)
@@ -117,6 +141,41 @@ def build_explanation(label: str, confidence: float,
 
     base += f" Das Modell ist sich {strength} (Confidence {confidence:.0%})."
     return base
+
+
+def transform_text(text: str, target: str) -> str:
+    """
+    Formt den Text in Richtung des Ziel-Sentiments um.
+    Einfache Heuristik: Wort-Substitution + Prefix/Suffix.
+    """
+    mapping = TO_POSITIVE if target == "Positive" else TO_NEGATIVE
+    out = []
+    for token in text.split():
+        prefix = ""
+        suffix = ""
+        # Satzzeichen vom Wort trennen
+        while token and token[0] in "\"'([":
+            prefix += token[0]
+            token = token[1:]
+        while token and token[-1] in ".,!?;:\"')]":
+            suffix = token[-1] + suffix
+            token = token[:-1]
+        clean = token.lower()
+        if clean in mapping:
+            replacement = mapping[clean]
+            # Großschreibung beibehalten
+            if token[:1].isupper():
+                replacement = replacement.capitalize()
+            out.append(prefix + replacement + suffix)
+        else:
+            out.append(prefix + token + suffix)
+
+    rewritten = " ".join(out)
+
+    if target == "Positive":
+        return f"{rewritten} Overall, it's a really pleasant experience!"
+    else:
+        return f"{rewritten} Overall, it's quite a disappointing experience."
 
 
 def highlight_text(text: str, positives: list[str], negatives: list[str]) -> str:
@@ -283,6 +342,22 @@ def main() -> None:
             "Hinweis: Es wurden keine bekannten Schlüsselwörter erkannt. "
             "Die Bewertung basiert auf dem Gesamtkontext des Modells."
         )
+
+    # ── Transformation Bereich ───────────────────────────────
+    st.divider()
+    st.subheader("Transformierter Text")
+
+    target = st.session_state.get("target_sentiment", "Positive")
+    transformed = transform_text(text, target)
+
+    tone = "freundlich, optimistisch" if target == "Positive" else "kritisch, pessimistisch"
+    st.caption(f"Ziel-Sentiment: **{target}** ({tone})")
+    st.markdown(f"> {transformed}")
+
+    st.caption(
+        "Hinweis: Diese Umformulierung basiert auf einer einfachen "
+        "Wort-für-Wort-Heuristik, nicht auf einem Sprachmodell."
+    )
 
 
 if __name__ == "__main__":
