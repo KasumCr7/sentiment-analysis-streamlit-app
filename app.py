@@ -481,18 +481,28 @@ def main() -> None:
     # ── Sprache zuerst wählen — alle weiteren UI-Strings hängen davon ab ──
     if "language" not in st.session_state:
         st.session_state.language = LANGUAGE_OPTIONS[0]
+    if "user_text" not in st.session_state:
+        st.session_state.user_text = ""
 
-    language = st.selectbox(
-        "Language",  # Selector-Label bleibt englisch (universell)
-        options=LANGUAGE_OPTIONS,
-        index=LANGUAGE_OPTIONS.index(st.session_state.language),
-        key="language",
-    )
+    # Beispiel-Button muss VOR dem Textarea geklickt werden, damit der State
+    # sich aktualisiert bevor das Widget rendert. Daher hier oben behandeln.
+    col_lang, col_example = st.columns([2, 1], vertical_alignment="bottom")
+    with col_lang:
+        language = st.selectbox(
+            "Language",
+            options=LANGUAGE_OPTIONS,
+            index=LANGUAGE_OPTIONS.index(st.session_state.language),
+            key="language",
+        )
     if language not in LANGUAGE_OPTIONS:
         st.error("Invalid language. Please choose from the list.")
         st.stop()
 
     texts = TEXTS[language]
+
+    with col_example:
+        if st.button(texts["load_example"], use_container_width=True):
+            st.session_state.user_text = texts["example"]
 
     # ── Titel ────────────────────────────────────────────────
     st.title(texts["title"])
@@ -510,12 +520,6 @@ def main() -> None:
 
     # ── Input ────────────────────────────────────────────────
     st.subheader(texts["input_section"])
-
-    if "user_text" not in st.session_state:
-        st.session_state.user_text = ""
-
-    if st.button(texts["load_example"]):
-        st.session_state.user_text = texts["example"]
 
     text = st.text_area(
         texts["input_label"],
