@@ -27,6 +27,20 @@ LABEL_COLORS = {
     "Negative": "#F44336",
 }
 
+# Einfache Wortlisten für die Erklärung (keine ML, nur Heuristik)
+POSITIVE_WORDS = {
+    "love", "great", "amazing", "awesome", "excellent", "fantastic",
+    "wonderful", "best", "good", "happy", "perfect", "brilliant",
+    "enjoy", "enjoyed", "nice", "beautiful", "favorite", "recommend",
+    "outstanding", "superb", "delightful", "pleased", "impressive",
+}
+NEGATIVE_WORDS = {
+    "hate", "bad", "terrible", "awful", "worst", "horrible",
+    "poor", "disappointing", "disappointed", "broken", "useless",
+    "boring", "annoying", "sad", "angry", "waste", "scam", "garbage",
+    "defective", "cheap", "ugly", "slow", "problem", "issue",
+}
+
 
 # ─────────────────────────────────────────────────────────────
 # Modell laden (gecached über die ganze Session)
@@ -57,6 +71,66 @@ def analyze_text(classifier, text: str) -> dict:
         scores = {"Negative": confidence, "Positive": 1 - confidence}
 
     return {"label": label, "confidence": confidence, "scores": scores}
+
+
+# ─────────────────────────────────────────────────────────────
+# Erklärungs-Logik (einfache Keyword-Heuristik)
+# ─────────────────────────────────────────────────────────────
+def find_keywords(text: str) -> tuple[list[str], list[str]]:
+    """Sucht positive und negative Schlüsselwörter im Text."""
+    tokens = {t.strip(".,!?;:\"'()[]").lower() for t in text.split()}
+    positives = sorted(tokens & POSITIVE_WORDS)
+    negatives = sorted(tokens & NEGATIVE_WORDS)
+    return positives, negatives
+
+
+def build_explanation(label: str, confidence: float,
+                      positives: list[str], negatives: list[str]) -> str:
+    """Baut eine kurze, menschenlesbare Erklärung."""
+    strength = (
+        "sehr sicher" if confidence >= 0.95
+        else "ziemlich sicher" if confidence >= 0.80
+        else "eher unsicher"
+    )
+    matching = positives if label == "Positive" else negatives
+    counter = negatives if label == "Positive" else positives
+
+    if matching:
+        words = ", ".join(f"\"{w}\"" for w in matching)
+        base = (
+            f"Der Text wurde als **{label}** eingestuft, weil er Wörter mit "
+            f"{'positiver' if label == 'Positive' else 'negativer'} "
+            f"Tonalität enthält ({words})."
+        )
+    else:
+        base = (
+            f"Der Text wurde als **{label}** eingestuft. Die Bewertung "
+            f"ergibt sich aus dem Gesamtkontext, nicht aus einzelnen Schlüsselwörtern."
+        )
+
+    if counter:
+        base += (
+            f" Auch wenn Begriffe wie {', '.join(repr(w) for w in counter)} "
+            f"in die andere Richtung deuten, überwiegt die "
+            f"{label.lower()} Tonalität."
+        )
+
+    base += f" Das Modell ist sich {strength} (Confidence {confidence:.0%})."
+    return base
+
+
+def highlight_text(text: str, positives: list[str], negatives: list[str]) -> str:
+    """Markiert Schlüsselwörter farbig in einer Markdown-Version des Textes."""
+    out = []
+    for token in text.split():
+        clean = token.strip(".,!?;:\"'()[]").lower()
+        if clean in positives:
+            out.append(f":green[**{token}**]")
+        elif clean in negatives:
+            out.append(f":red[**{token}**]")
+        else:
+            out.append(token)
+    return " ".join(out)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -172,6 +246,35 @@ def main() -> None:
             return
 
     render_result(result)
+
+    # ── Explanation Bereich ──────────────────────────────────
+    st.divider()
+    st.subheader("Explanation")
+
+    positives, negatives = find_keywords(text)
+    explanation = build_explanation(
+        result["label"], result["confidence"], positives, negatives
+    )
+    st.markdown(explanation)
+
+    if positives or negatives:
+        st.markdown("**Hervorgehobener Text:**")
+        st.markdown(highlight_text(text, positives, negatives))
+
+        col_pos, col_neg = st.columns(2)
+        col_pos.markdown(
+            "**Positive Wörter:** "
+            + (", ".join(f":green[{w}]" for w in positives) if positives else "_keine_")
+        )
+        col_neg.markdown(
+            "**Negative Wörter:** "
+            + (", ".join(f":red[{w}]" for w in negatives) if negatives else "_keine_")
+        )
+    else:
+        st.caption(
+            "Hinweis: Es wurden keine bekannten Schlüsselwörter erkannt. "
+            "Die Bewertung basiert auf dem Gesamtkontext des Modells."
+        )
 
 
 if __name__ == "__main__":
