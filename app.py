@@ -14,17 +14,34 @@ from transformers import pipeline
 # ─────────────────────────────────────────────────────────────
 # Konstanten
 # ─────────────────────────────────────────────────────────────
-MODEL_NAME = "distilbert-base-uncased-finetuned-sst-2-english"
-EXAMPLE_TEXT = "I love this product! It works flawlessly and made my day."
+MODEL_NAME = "nlptown/bert-base-multilingual-uncased-sentiment"
 
-LABEL_MAP = {
-    "POSITIVE": "Positive",
-    "NEGATIVE": "Negative",
+# Pro Sprache: lokalisierte Labels + Beispieltext
+LANGUAGES = {
+    "English": {
+        "positive": "Positive",
+        "negative": "Negative",
+        "neutral": "Neutral",
+        "example": "I love this product! It works flawlessly and made my day.",
+    },
+    "German": {
+        "positive": "Positiv",
+        "negative": "Negativ",
+        "neutral": "Neutral",
+        "example": "Ich liebe dieses Produkt! Es funktioniert einwandfrei.",
+    },
+    "French": {
+        "positive": "Positif",
+        "negative": "Négatif",
+        "neutral": "Neutre",
+        "example": "J'adore ce produit ! Il fonctionne parfaitement.",
+    },
 }
 
 LABEL_COLORS = {
     "Positive": "#4CAF50",
     "Negative": "#F44336",
+    "Neutral": "#9E9E9E",
 }
 
 # Einfache Wortlisten für die Erklärung (keine ML, nur Heuristik)
@@ -78,23 +95,36 @@ def load_model():
 # ─────────────────────────────────────────────────────────────
 # Analyse-Logik
 # ─────────────────────────────────────────────────────────────
-def analyze_text(classifier, text: str) -> dict:
+def analyze_text(classifier, text: str, language: str) -> dict:
     """
-    Führt die Sentiment-Analyse aus und liefert ein Dict mit
-    label, confidence sowie Scores für beide Klassen.
+    Führt die Sentiment-Analyse aus.
+    Das Modell liefert 1–5 Sterne. Mapping:
+      1–2 → Negative, 3 → Neutral, 4–5 → Positive.
+    Internes Label bleibt englisch; display_label ist sprachabhängig.
     """
     result = classifier(text)[0]
-    raw_label = result["label"]
+    raw_label = result["label"]  # z.B. "5 stars"
     confidence = float(result["score"])
-    label = LABEL_MAP.get(raw_label, raw_label)
+    stars = int(raw_label.split()[0])
 
-    # Score auf beide Klassen aufteilen (Pipeline liefert nur den Top-Score)
-    if label == "Positive":
+    if stars >= 4:
+        label = "Positive"
         scores = {"Positive": confidence, "Negative": 1 - confidence}
-    else:
+    elif stars <= 2:
+        label = "Negative"
         scores = {"Negative": confidence, "Positive": 1 - confidence}
+    else:
+        label = "Neutral"
+        scores = {"Positive": 0.5, "Negative": 0.5}
 
-    return {"label": label, "confidence": confidence, "scores": scores}
+    display_label = LANGUAGES[language][label.lower()]
+    return {
+        "label": label,
+        "display_label": display_label,
+        "confidence": confidence,
+        "scores": scores,
+        "stars": stars,
+    }
 
 
 # ─────────────────────────────────────────────────────────────
@@ -197,12 +227,13 @@ def highlight_text(text: str, positives: list[str], negatives: list[str]) -> str
 # ─────────────────────────────────────────────────────────────
 def render_result(result: dict) -> None:
     """Zeigt Label, Confidence-Metrik und Bar-Chart."""
-    label = result["label"]
+    display_label = result["display_label"]
     confidence = result["confidence"]
 
-    col1, col2 = st.columns(2)
-    col1.metric("Sentiment", label)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Sentiment", display_label)
     col2.metric("Confidence", f"{confidence:.2%}")
+    col3.metric("Stars", f"{result['stars']} / 5")
 
     st.progress(confidence)
     render_chart(result["scores"])
@@ -260,8 +291,8 @@ def main() -> None:
     # ── Titel ────────────────────────────────────────────────
     st.title("Sentiment Analysis Web App")
     st.caption(
-        "Analysiere englische Texte mit einem vortrainierten HuggingFace Modell "
-        "(DistilBERT, fine-tuned auf SST-2)."
+        "Analysiere Texte in mehreren Sprachen (English, German, French) mit einem "
+        "multilingualen HuggingFace BERT-Modell (nlptown, 1–5 Sterne)."
     )
     st.divider()
 
@@ -283,11 +314,17 @@ def main() -> None:
     if "user_text" not in st.session_state:
         st.session_state.user_text = ""
 
+    col_lang, col_example = st.columns([1, 1])
+    language = col_lang.selectbox(
+        "Language",
+        list(LANGUAGES.keys()),
+        key="language",
+        help="Sprache des Eingabetextes.",
+    )
     # Beispiel-Button MUSS vor dem Textarea kommen,
     # damit ein Klick den State aktualisiert bevor das Widget rendert.
-    col_example, _ = st.columns([1, 3])
     if col_example.button("Load Example Text", use_container_width=True):
-        st.session_state.user_text = EXAMPLE_TEXT
+        st.session_state.user_text = LANGUAGES[language]["example"]
 
     text = st.text_area(
         "Dein Text:",
@@ -331,7 +368,7 @@ def main() -> None:
 
     with st.spinner("Analysiere Text — das kann einige Sekunden dauern ..."):
         try:
-            result = analyze_text(classifier, text)
+            result = analyze_text(classifier, text, language)
         except Exception as exc:  # noqa: BLE001
             st.error(
                 "Bei der Analyse ist ein Fehler aufgetreten. "
@@ -342,8 +379,8 @@ def main() -> None:
             return
 
     st.success(
-        f"Analyse abgeschlossen — Sentiment erkannt als **{result['label']}** "
-        f"(Confidence {result['confidence']:.0%})."
+        f"Analyse abgeschlossen ({language}) — Sentiment erkannt als "
+        f"**{result['display_label']}** (Confidence {result['confidence']:.0%})."
     )
     render_result(result)
 
