@@ -1,33 +1,11 @@
-version: "3.9"
-
 services:
   sentiment-app:
     build: .
-    container_name: sentiment-analysis-app
+    container_name: sentiment-app
     ports:
       - "8501:8501"
     volumes:
       - ./data:/app/data
-      - ./notebooks:/app/notebooks
-      - hf-cache:/root/.cache/huggingface
     environment:
       - PYTHONUNBUFFERED=1
-      - TRANSFORMERS_CACHE=/root/.cache/huggingface
     restart: unless-stopped
-
-  jupyter:
-    build: .
-    container_name: sentiment-jupyter
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./notebooks:/app/notebooks
-      - ./data:/app/data
-      - hf-cache:/root/.cache/huggingface
-    command: >
-      jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
-      --allow-root --NotebookApp.token='' --NotebookApp.password=''
-      --notebook-dir=/app/notebooks
-
-volumes:
-  hf-cache:

@@ -1,126 +1,80 @@
-<<<<<<< HEAD
-# 🧠 Sentiment Analysis Web App
+# sentiment-analysis-streamlit-app
 
-Eine interaktive Web-App zur Sentiment-Analyse von Texten — gebaut mit **Streamlit**, **HuggingFace Transformers** und vollständig in **Docker** containerisiert. Kommt mit einem Jupyter-Notebook für die explorative Datenanalyse.
+Streamlit-App für Sentiment-Analyse englischer Texte. Verwendet ein vortrainiertes
+DistilBERT-Modell (SST-2) über die HuggingFace Transformers Pipeline. Containerisiert
+mit Docker.
 
----
+## Features
 
-## ✨ Features
+- Sentiment-Klassifikation (Positive / Negative) mit Confidence-Score
+- Bar-Chart der beiden Klassen-Scores
+- Beispieltext per Knopfdruck einfügbar
+- Modell wird zur Laufzeit gecacht (`@st.cache_resource`)
+- Eingabevalidierung und Fehlerbehandlung beim Modell-Load
 
-- **Live Sentiment-Analyse** beliebiger Texte über DistilBERT (SST-2)
-- **Dataset-Explorer** mit pandas-Vorschau und Verteilungs-Plot
-- **Jupyter Notebook** für EDA, Visualisierung & Modell-Evaluation
-- **Dockerized** — App + Jupyter laufen über `docker compose up`
-- **HuggingFace Cache** persistiert per Volume (kein Re-Download bei Restart)
-- Funktioniert offline mit mitgeliefertem Dummy-Datensatz, optional Kaggle-Daten einlegbar
+## Tech Stack
 
----
+- Python 3.11
+- Streamlit
+- HuggingFace Transformers (`distilbert-base-uncased-finetuned-sst-2-english`)
+- PyTorch
+- pandas, matplotlib
+- Docker / Docker Compose
 
-## 🗂️ Projektstruktur
+## Projektstruktur
 
 ```
 sentiment-analysis-app/
+├── app.py
+├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt
-├── app.py                    # Streamlit App
-├── notebooks/
-│   └── analysis.ipynb        # Datenanalyse & HF-Pipeline-Test
+├── .dockerignore
 ├── data/
-│   └── sentiment_data.csv    # Dummy-Daten (30 Beispiele)
-└── README.md
+│   └── sentiment_data.csv
+└── notebooks/
+    └── analysis.ipynb
 ```
 
----
+## Lokale Ausführung
 
-## 📋 Anforderungen
-
-- **Docker** ≥ 20.10
-- **Docker Compose** ≥ 2.0
-- ~3 GB freier Speicher (für Modell-Download beim ersten Start)
-
-Ohne Docker:
-- Python 3.11+
-- pip
-
----
-
-## 🚀 Installation
-
-### Option A — Docker (empfohlen)
+Voraussetzungen: Python 3.11+, pip.
 
 ```bash
-git clone <repo-url>
-cd sentiment-analysis-app
-docker compose up --build
-```
-
-Beim ersten Start lädt HuggingFace das DistilBERT-Modell (~250 MB). Danach im Cache.
-
-### Option B — Lokal mit Python
-
-```bash
-cd sentiment-analysis-app
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
----
+App läuft auf http://localhost:8501.
 
-## 🖥️ Usage
+Erster Start lädt das Modell (~250 MB) in den HuggingFace-Cache.
 
-Nach `docker compose up`:
+## Docker-Ausführung
 
-| Service | URL | Zweck |
-|---|---|---|
-| Streamlit App | http://localhost:8501 | Live-Analyse + Dataset-Viewer |
-| Jupyter Notebook | http://localhost:8888 | `notebooks/analysis.ipynb` öffnen |
+Voraussetzungen: Docker 20.10+, Docker Compose v2.
 
-### App-Tabs
+```bash
+docker compose up --build
+```
 
-1. **✍️ Live-Analyse** — Text eingeben → Sentiment + Confidence + Progress-Bar
-2. **📊 Dataset** — Vorschau der CSV + Bar-Chart der Label-Verteilung
+App läuft auf http://localhost:8501.
 
-### Eigene Daten verwenden
-
-Lege eine CSV mit den Spalten `text,label` unter `data/sentiment_data.csv` ab. Optional kannst du `data/kaggle_sentiment.csv` hinterlegen — das Notebook nutzt diese automatisch.
-
----
-
-## 🛑 Stoppen
+Stoppen:
 
 ```bash
 docker compose down
 ```
 
-Cache & Volumes löschen:
+Das Verzeichnis `data/` ist als Volume gemountet und persistiert zwischen Container-Restarts.
 
-```bash
-docker compose down -v
-```
+## Konfiguration
 
----
+| Variable             | Default | Zweck                              |
+|----------------------|---------|------------------------------------|
+| `PYTHONUNBUFFERED`   | `1`     | Logs sofort an stdout              |
 
-## 🧪 Tech Stack
+## Lizenz
 
-| Komponente | Verwendung |
-|---|---|
-| Streamlit | Web-UI |
-| HuggingFace Transformers | DistilBERT-Pipeline |
-| PyTorch | Backend für das Modell |
-| pandas | Datenverarbeitung |
-| matplotlib | Visualisierungen |
-| Jupyter | EDA-Notebook |
-| Docker | Reproduzierbares Deployment |
-
----
-
-## 📝 Lizenz
-
-MIT — frei zu nutzen, anzupassen und weiterzuentwickeln.
-=======
-# sentiment-analysis-streamlit-app
-Simple Sentiment Analysis web App using Streamlit, Transformers, and Docker.
->>>>>>> a823594900a67302045ae1f26cfd7f90f55a0f9b
+MIT
