@@ -44,6 +44,9 @@ LABEL_COLORS = {
     "Neutral": "#9E9E9E",
 }
 
+# Feste, unveränderliche Auswahl für das Ziel-Sentiment Dropdown
+TARGET_SENTIMENT_OPTIONS: tuple[str, ...] = ("Positive", "Negative")
+
 # Einfache Wortlisten für die Erklärung (keine ML, nur Heuristik)
 POSITIVE_WORDS = {
     "love", "great", "amazing", "awesome", "excellent", "fantastic",
@@ -335,10 +338,17 @@ def main() -> None:
 
     target_sentiment = st.selectbox(
         "Target Sentiment",
-        ["Positive", "Negative"],
+        options=TARGET_SENTIMENT_OPTIONS,
+        index=0,  # Default: "Positive"
         key="target_sentiment",
+        placeholder="Bitte auswählen ...",
         help="In welche Richtung soll der Text später verändert werden?",
     )
+    # Defensive Validierung — selectbox erlaubt keine freie Eingabe,
+    # aber wir prüfen explizit, falls jemand den State manipuliert.
+    if target_sentiment not in TARGET_SENTIMENT_OPTIONS:
+        st.error("Ungültiges Ziel-Sentiment. Bitte eine Option aus der Liste wählen.")
+        st.stop()
     st.caption(f"Ausgewähltes Ziel-Sentiment: **{target_sentiment}**")
 
     has_text = bool(text.strip())
