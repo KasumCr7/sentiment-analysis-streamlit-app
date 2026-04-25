@@ -137,7 +137,7 @@ TEXTS = {
             "Bitte Internet-Verbindung prüfen und die App neu starten."
         ),
         "tech_details": "Technische Details",
-        "success": "Analyse abgeschlossen ({language}) — Sentiment erkannt als **{label}** (Confidence {conf}).",
+        "success": "Analyse abgeschlossen ({language}) — Sentiment erkannt als **{label}** (Konfidenz {conf}).",
         "metric_sentiment": "Sentiment",
         "metric_confidence": "Konfidenz",
         "metric_stars": "Sterne",
@@ -156,7 +156,7 @@ TEXTS = {
             " Auch wenn Begriffe wie {words} in die andere Richtung deuten, "
             "überwiegt die {label_lower} Tonalität."
         ),
-        "explanation_confidence": " Das Modell ist sich {strength} (Confidence {conf}).",
+        "explanation_confidence": " Das Modell ist sich {strength} (Konfidenz {conf}).",
         "tone_positive": "positiver",
         "tone_negative": "negativer",
         "strength_high": "sehr sicher",
@@ -266,41 +266,119 @@ TEXTS = {
 }
 
 # ─────────────────────────────────────────────────────────────
-# Wortlisten (Englisch — für Heuristik in Erklärung & Transformation)
+# Sprachabhängige Wortlisten + Transformations-Mappings
+# (Heuristik in Erklärung & Transformation)
 # ─────────────────────────────────────────────────────────────
-POSITIVE_WORDS = {
-    "love", "great", "amazing", "awesome", "excellent", "fantastic",
-    "wonderful", "best", "good", "happy", "perfect", "brilliant",
-    "enjoy", "enjoyed", "nice", "beautiful", "favorite", "recommend",
-    "outstanding", "superb", "delightful", "pleased", "impressive",
-}
-NEGATIVE_WORDS = {
-    "hate", "bad", "terrible", "awful", "worst", "horrible",
-    "poor", "disappointing", "disappointed", "broken", "useless",
-    "boring", "annoying", "sad", "angry", "waste", "scam", "garbage",
-    "defective", "cheap", "ugly", "slow", "problem", "issue",
-}
-TO_POSITIVE = {
-    "bad": "great", "terrible": "wonderful", "awful": "amazing",
-    "worst": "best", "horrible": "delightful", "poor": "excellent",
-    "disappointing": "impressive", "disappointed": "pleased",
-    "broken": "flawless", "useless": "useful", "boring": "exciting",
-    "annoying": "pleasant", "sad": "happy", "angry": "calm",
-    "waste": "treasure", "garbage": "gem", "defective": "perfect",
-    "cheap": "high-quality", "ugly": "beautiful", "slow": "fast",
-    "problem": "feature", "issue": "highlight", "hate": "love",
-    "not": "really", "never": "always", "no": "yes",
-}
-TO_NEGATIVE = {
-    "love": "hate", "great": "terrible", "amazing": "awful",
-    "awesome": "horrible", "excellent": "poor", "fantastic": "disappointing",
-    "wonderful": "boring", "best": "worst", "good": "bad",
-    "happy": "sad", "perfect": "broken", "brilliant": "dull",
-    "enjoy": "endure", "enjoyed": "endured", "nice": "annoying",
-    "beautiful": "ugly", "favorite": "least favorite",
-    "recommend": "warn against", "outstanding": "mediocre",
-    "superb": "awful", "delightful": "tedious", "pleased": "frustrated",
-    "impressive": "underwhelming", "always": "never", "really": "barely",
+LANG_DATA = {
+    "English": {
+        "positive_words": {
+            "love", "great", "amazing", "awesome", "excellent", "fantastic",
+            "wonderful", "best", "good", "happy", "perfect", "brilliant",
+            "enjoy", "enjoyed", "nice", "beautiful", "favorite", "recommend",
+            "outstanding", "superb", "delightful", "pleased", "impressive",
+        },
+        "negative_words": {
+            "hate", "bad", "terrible", "awful", "worst", "horrible",
+            "poor", "disappointing", "disappointed", "broken", "useless",
+            "boring", "annoying", "sad", "angry", "waste", "scam", "garbage",
+            "defective", "cheap", "ugly", "slow", "problem", "issue",
+        },
+        "to_positive": {
+            "bad": "great", "terrible": "wonderful", "awful": "amazing",
+            "worst": "best", "horrible": "delightful", "poor": "excellent",
+            "disappointing": "impressive", "disappointed": "pleased",
+            "broken": "flawless", "useless": "useful", "boring": "exciting",
+            "annoying": "pleasant", "sad": "happy", "angry": "calm",
+            "waste": "treasure", "garbage": "gem", "defective": "perfect",
+            "cheap": "high-quality", "ugly": "beautiful", "slow": "fast",
+            "problem": "feature", "issue": "highlight", "hate": "love",
+            "not": "really", "never": "always", "no": "yes",
+        },
+        "to_negative": {
+            "love": "hate", "great": "terrible", "amazing": "awful",
+            "awesome": "horrible", "excellent": "poor", "fantastic": "disappointing",
+            "wonderful": "boring", "best": "worst", "good": "bad",
+            "happy": "sad", "perfect": "broken", "brilliant": "dull",
+            "enjoy": "endure", "enjoyed": "endured", "nice": "annoying",
+            "beautiful": "ugly", "favorite": "least favorite",
+            "recommend": "warn against", "outstanding": "mediocre",
+            "superb": "awful", "delightful": "tedious", "pleased": "frustrated",
+            "impressive": "underwhelming", "always": "never", "really": "barely",
+        },
+    },
+    "Deutsch": {
+        "positive_words": {
+            "liebe", "super", "großartig", "toll", "ausgezeichnet", "fantastisch",
+            "wunderbar", "beste", "gut", "glücklich", "perfekt", "brillant",
+            "genieße", "schön", "lieblings", "empfehle", "hervorragend",
+            "großartig", "angenehm", "zufrieden", "beeindruckend",
+        },
+        "negative_words": {
+            "hasse", "schlecht", "furchtbar", "schrecklich", "schlimmste",
+            "miserabel", "enttäuschend", "enttäuscht", "kaputt", "nutzlos",
+            "langweilig", "nervig", "traurig", "wütend", "verschwendung",
+            "müll", "defekt", "billig", "hässlich", "langsam", "problem",
+        },
+        "to_positive": {
+            "schlecht": "großartig", "furchtbar": "wunderbar",
+            "schrecklich": "fantastisch", "schlimmste": "beste",
+            "miserabel": "ausgezeichnet", "enttäuschend": "beeindruckend",
+            "enttäuscht": "zufrieden", "kaputt": "perfekt", "nutzlos": "nützlich",
+            "langweilig": "spannend", "nervig": "angenehm", "traurig": "glücklich",
+            "wütend": "ruhig", "verschwendung": "schatz", "müll": "juwel",
+            "defekt": "perfekt", "billig": "hochwertig", "hässlich": "schön",
+            "langsam": "schnell", "problem": "vorteil", "hasse": "liebe",
+            "nicht": "wirklich", "nie": "immer", "kein": "ein", "keine": "eine",
+        },
+        "to_negative": {
+            "liebe": "hasse", "super": "furchtbar", "großartig": "schrecklich",
+            "toll": "schrecklich", "ausgezeichnet": "miserabel",
+            "fantastisch": "enttäuschend", "wunderbar": "langweilig",
+            "beste": "schlimmste", "gut": "schlecht", "glücklich": "traurig",
+            "perfekt": "kaputt", "brillant": "stumpf", "genieße": "ertrage",
+            "schön": "hässlich", "lieblings": "ungeliebte",
+            "empfehle": "warne vor", "hervorragend": "mittelmäßig",
+            "angenehm": "nervig", "zufrieden": "frustriert",
+            "beeindruckend": "enttäuschend", "immer": "nie", "wirklich": "kaum",
+        },
+    },
+    "Français": {
+        "positive_words": {
+            "adore", "aime", "super", "génial", "excellent", "fantastique",
+            "merveilleux", "meilleur", "bon", "bonne", "heureux", "parfait",
+            "brillant", "apprécie", "joli", "belle", "beau", "favori",
+            "recommande", "exceptionnel", "agréable", "satisfait", "impressionnant",
+        },
+        "negative_words": {
+            "déteste", "mauvais", "mauvaise", "terrible", "affreux", "pire",
+            "horrible", "médiocre", "décevant", "déçu", "cassé", "inutile",
+            "ennuyeux", "agaçant", "triste", "fâché", "gaspillage", "défectueux",
+            "moche", "laid", "lent", "problème",
+        },
+        "to_positive": {
+            "mauvais": "génial", "mauvaise": "géniale", "terrible": "merveilleux",
+            "affreux": "fantastique", "pire": "meilleur", "horrible": "agréable",
+            "médiocre": "excellent", "décevant": "impressionnant",
+            "déçu": "satisfait", "cassé": "parfait", "inutile": "utile",
+            "ennuyeux": "passionnant", "agaçant": "agréable", "triste": "heureux",
+            "fâché": "calme", "gaspillage": "trésor", "défectueux": "parfait",
+            "moche": "beau", "laid": "beau", "lent": "rapide",
+            "problème": "atout", "déteste": "adore",
+            "ne": "vraiment", "pas": "très", "jamais": "toujours",
+        },
+        "to_negative": {
+            "adore": "déteste", "aime": "déteste", "super": "terrible",
+            "génial": "affreux", "excellent": "médiocre",
+            "fantastique": "décevant", "merveilleux": "ennuyeux",
+            "meilleur": "pire", "bon": "mauvais", "bonne": "mauvaise",
+            "heureux": "triste", "parfait": "cassé", "brillant": "terne",
+            "apprécie": "endure", "joli": "moche", "belle": "moche",
+            "beau": "moche", "favori": "détesté", "recommande": "déconseille",
+            "exceptionnel": "médiocre", "agréable": "pénible",
+            "satisfait": "frustré", "impressionnant": "décevant",
+            "toujours": "jamais", "vraiment": "à peine",
+        },
+    },
 }
 
 
@@ -344,9 +422,10 @@ def analyze_text(classifier, text: str, texts: dict) -> dict:
 # ─────────────────────────────────────────────────────────────
 # Erklärungs- und Transformations-Logik
 # ─────────────────────────────────────────────────────────────
-def find_keywords(text: str) -> tuple[list[str], list[str]]:
+def find_keywords(text: str, language: str) -> tuple[list[str], list[str]]:
+    data = LANG_DATA[language]
     tokens = {t.strip(".,!?;:\"'()[]").lower() for t in text.split()}
-    return sorted(tokens & POSITIVE_WORDS), sorted(tokens & NEGATIVE_WORDS)
+    return sorted(tokens & data["positive_words"]), sorted(tokens & data["negative_words"])
 
 
 def build_explanation(label: str, confidence: float,
@@ -384,8 +463,9 @@ def build_explanation(label: str, confidence: float,
     return base
 
 
-def transform_text(text: str, target: str, texts: dict) -> str:
-    mapping = TO_POSITIVE if target == "Positive" else TO_NEGATIVE
+def transform_text(text: str, target: str, language: str, texts: dict) -> str:
+    data = LANG_DATA[language]
+    mapping = data["to_positive"] if target == "Positive" else data["to_negative"]
     out = []
     for token in text.split():
         prefix = ""
@@ -584,7 +664,7 @@ def main() -> None:
     st.divider()
     st.subheader(texts["explanation_section"])
 
-    positives, negatives = find_keywords(text)
+    positives, negatives = find_keywords(text, language)
     st.markdown(build_explanation(
         result["label"], result["confidence"], positives, negatives, texts
     ))
@@ -613,7 +693,7 @@ def main() -> None:
     st.caption(texts["transform_caption"].format(
         target=target_sentiment, tone=texts[tone_key]
     ))
-    st.markdown(f"> {transform_text(text, target_sentiment, texts)}")
+    st.markdown(f"> {transform_text(text, target_sentiment, language, texts)}")
     st.caption(texts["transform_hint"])
 
 
